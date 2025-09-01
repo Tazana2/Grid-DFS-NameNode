@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 from typing import List, Optional
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Museum Robot API"
+    PROJECT_NAME: str = "Grid NameNode API"
     API_V1_PREFIX: str = "/api/v1"
 
     class Config:
