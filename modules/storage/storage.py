@@ -20,12 +20,12 @@ class Storage:
         num_block = (filesize + block_size - 1) // block_size
         for i in range(num_block):
             block_id = f"{filename}_block_{i}_{uuid.uuid4().hex[:6]}"
-            datanode = datanode_ids[self.rr_index % len(datanode_ids)]
+            datanode = self.datanodes[datanode_ids[self.rr_index % len(datanode_ids)]]
             self.rr_index += 1
 
             block = BlockMetadata(
                 block_id=block_id,
-                datanode=datanode,
+                datanode=f"http://{datanode.ip}:{datanode.port}",
                 size=min(block_size, filesize - i * block_size),
                 index=i
             )
