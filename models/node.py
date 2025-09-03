@@ -11,10 +11,11 @@ class AllocateRequest(BaseModel):
     filename: str
     filesize: int
     block_size: int = 64 * 1024 * 1024 # 64MB default
+    owner: str
+    directory: str = "/"
 
 class BlockMetadata(BaseModel):
     block_id: str
-    ip: str
-    port: int
+    datanode: dict
     size: int
     index: int

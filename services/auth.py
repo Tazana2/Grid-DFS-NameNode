@@ -11,4 +11,5 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     username = verify_token(token)
     if not username:
         raise HTTPException(status_code=401, detail="Invalid token")
+    return username
     
