@@ -3,7 +3,8 @@ from pydantic import BaseModel
 class RegisterDataNodeRequest(BaseModel):
     id: str
     ip: str
-    port: int
+    rest_port: int
+    rpc_port: int
     capacity: int
 
 class AllocateRequest(BaseModel):
@@ -13,6 +14,7 @@ class AllocateRequest(BaseModel):
 
 class BlockMetadata(BaseModel):
     block_id: str
-    datanode: str
+    ip: str
+    port: int
     size: int
     index: int

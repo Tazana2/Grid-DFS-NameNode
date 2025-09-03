@@ -25,7 +25,8 @@ class Storage:
 
             block = BlockMetadata(
                 block_id=block_id,
-                datanode=f"http://{datanode.ip}:{datanode.port}",
+                ip=datanode.ip,
+                port=datanode.rpc_port,
                 size=min(block_size, filesize - i * block_size),
                 index=i
             )

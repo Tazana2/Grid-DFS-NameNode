@@ -6,7 +6,7 @@ from .storage import storage
 router = APIRouter()
 
 @router.post("/register_datanode")
-def register_datanode(req: RegisterDataNodeRequest, user: str = Depends(get_current_user)):
+def register_datanode(req: RegisterDataNodeRequest):
     storage.register_datanode(req)
     return {"msg": "DataNode Registered Succesfully!", "datanodes": storage.datanodes}
 
