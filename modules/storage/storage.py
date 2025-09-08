@@ -1,13 +1,33 @@
 import uuid
+import json
+import os
 from typing import Dict
 from models.node import RegisterDataNodeRequest, BlockMetadata
 
 class Storage:
-    def __init__(self) -> None:
+    def __init__(self, metadata_file="namenode_metadata.json") -> None:
         self.datanodes: Dict[str, RegisterDataNodeRequest] = {}
         self.directories: Dict[str, Dict] = {}  # owner -> root tree
         self.rr_index = 0
+        self.metadata_file = metadata_file
+        self._load_metadata()
 
+    # ------------------ Persistencia ------------------ #
+    def _persist(self):
+        with open(self.metadata_file, "w") as f:
+            json.dump({
+                "directories": self.directories,
+                "rr_index": self.rr_index
+            }, f)
+
+    def _load_metadata(self):
+        if os.path.exists(self.metadata_file):
+            with open(self.metadata_file, "r") as f:
+                data = json.load(f)
+                self.directories = data.get("directories", {})
+                self.rr_index = data.get("rr_index", 0)
+
+    # ------------------ Utils internos ------------------ #
     def register_datanode(self, req: RegisterDataNodeRequest):
         self.datanodes[req.id] = req
 
@@ -16,18 +36,18 @@ class Storage:
             self.directories[owner] = {
                 "/": {"subdirs": {}, "files": {}}
             }
+            self._persist()
 
     def _get_dir(self, owner: str, path: str):
         self._ensure_user_root(owner)
         parts = [p for p in path.strip("/").split("/") if p]
         curr = self.directories[owner]["/"]
-        print(f"parts: {parts}\n curr: {curr}\n path: {path}")
         for part in parts:
             if part not in curr["subdirs"]:
                 raise Exception(f"Directory {path} not found")
             curr = curr["subdirs"][part]
         return curr
-    
+
     def _collect_files_in_dir(self, dir_ref: Dict):
         collected = []
         for fname, meta in dir_ref["files"].items():
@@ -36,12 +56,14 @@ class Storage:
             collected.extend(self._collect_files_in_dir(sub))
         return collected
 
+    # ------------------ Operaciones ------------------ #
     def mkdir(self, dirname: str, owner: str, parent: str = "/"):
         self._ensure_user_root(owner)
         parent_dir = self._get_dir(owner, parent)
         if dirname in parent_dir["subdirs"]:
             raise Exception("Directory already exists")
         parent_dir["subdirs"][dirname] = {"subdirs": {}, "files": {}}
+        self._persist()
         return {"msg": f"Directory {dirname} created at {parent} for {owner}"}
 
     def rmdir(self, dirname: str, owner: str, parent: str = "/"):
@@ -51,12 +73,12 @@ class Storage:
             raise Exception("Directory not found")
 
         dir_to_remove = parent_dir["subdirs"][dirname]
-
         deleted_blocks = []
         for fname, meta in self._collect_files_in_dir(dir_to_remove):
             deleted_blocks.extend(meta["blocks"])
 
         parent_dir["subdirs"].pop(dirname)
+        self._persist()
 
         return {
             "msg": f"Directory {dirname} and its files removed",
@@ -93,6 +115,7 @@ class Storage:
             "owner": owner,
             "dir": directory
         }
+        self._persist()
         return blocks
 
     def get_metadata(self, filename: str, directory: str, owner: str):
@@ -106,6 +129,7 @@ class Storage:
         if filename not in dir_ref["files"]:
             raise Exception("File not found")
         deleted = dir_ref["files"].pop(filename)
+        self._persist()
         return deleted
 
     def ls_files(self, owner: str, directory: str = "/"):
