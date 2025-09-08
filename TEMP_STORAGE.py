@@ -1,5 +1,2 @@
-# No hay db so paila
-USERS = {"admin": "admin123"}
-# Tokens en memoria
+USERS = {"admin": {"password": "admin123"}, "datanode": {"password": "datanode123"}}
 TOKENS = {}
-

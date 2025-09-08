@@ -12,7 +12,7 @@ def register_datanode(req: RegisterDataNodeRequest):
 
 @router.post("/allocate")
 def allocate(req: AllocateRequest, user: str = Depends(get_current_user)):
-    blocks = storage.allocate_file(req.filename, req.filesize, req.block_size, req.owner, req.directory)
+    blocks = storage.allocate_file(req.filename, req.filesize, req.block_size, user, req.directory)
     return {"filename": req.filename, "blocks": blocks}
 
 @router.get("/metadata/{filename}")
