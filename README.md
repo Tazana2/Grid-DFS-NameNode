@@ -1,63 +1,39 @@
-# Grid-DFS
+# GridDFS - NameNode
 
-A minimal distributed file system (DFS) that stores files split into blocks across multiple DataNodes and keeps metadata in a NameNode.
+El **NameNode** es el nodo maestro del sistema GridDFS.  
+Su rol principal es **gestionar la metadata** de usuarios, directorios, archivos y bloques distribuidos en los DataNodes.
 
+---
 
-## Features (MVP)
+## 🚀 Funcionalidades principales
+- Registro de DataNodes (manual y vía heartbeat).
+- Manejo de directorios (`mkdir`, `rmdir`).
+- Manejo de archivos (`put`, `get`, `rm`).
+- Persistencia de metadata en `namenode_metadata.json`.
+- Gestión multiusuario con autenticación básica.
 
-* NameNode service (FastAPI): manages metadata, DataNode registry and block allocation.
-* DataNode service (FastAPI): accepts block uploads, serves block downloads, reports health.
-* CLI client (`gridfs`): `put`, `get`, `ls`, `rm`, `mkdir`, `rmdir` (minimal UX).
-* Simple round-robin block allocation and configurable block size (default 64 MB).
-* Docker Compose to launch 1 NameNode + 3 DataNodes for demo/testing.
+---
 
+## 🏗 Arquitectura de la API
 
-## Architecture and API
+- **Autenticación (`/auth`)**
+  - `POST /auth/register` → Registro de usuario.
+  - `POST /auth/login` → Inicio de sesión, retorna token JWT básico.
 
-### NameNode
+- **Gestión de directorios y archivos (`/namenode`)**
+  - `POST /namenode/mkdir` → Crear directorio.
+  - `DELETE /namenode/rmdir` → Eliminar directorio (y todos los archivos dentro).
+  - `POST /namenode/allocate` → Asignar bloques de un archivo a DataNodes.
+  - `DELETE /namenode/rm/{filename}` → Eliminar archivo.
+  - `GET /namenode/metadata/{filename}` → Obtener metadata de un archivo.
+  - `GET /namenode/ls` → Listar directorios y archivos.
+  - `POST /namenode/register_datanode` → Registrar o refrescar estado de un DataNode (heartbeat).
 
-* `POST /auth/login` — simple auth (returns token)
-* `POST /namenode/register_datanode` — register a DataNode (called at DataNode startup)
-* `POST /namenode/allocate` — request block allocation for a file (returns block list with target DataNodes)
-* `GET  /namenode/metadata/{filename}` — retrieve metadata for a file
+---
 
-> NameNode stores metadata in a lightweight on-disk store (JSON or SQLite) suitable for the assignment.
-
-### DataNode
-
-* `POST /datanode/register` — register with NameNode on startup
-* `PUT  /datanode/block/{block_id}` — upload a block (binary)
-* `GET  /datanode/block/{block_id}` — download a block
-* `GET  /datanode/health` — health check and basic stats
-
-
-## CLI (client)
-
-Basic commands provided by `client/cli.py`:
-
-* `put <file>` — split file to blocks, request allocation and upload blocks to DataNodes.
-* `get <file>` — retrieve blocks from DataNodes and reconstruct the file.
-* `ls` — list files known to the NameNode.
-* `rm <file>` — delete file metadata and request DataNodes to delete blocks.
-* `mkdir` / `rmdir` — optional directory emulation (simple implementation)
-
-Usage examples:
-
+## ▶️ Ejecución
 ```bash
-python3 client/cli.py put sample.bin
-python3 client/cli.py ls
-python3 client/cli.py get sample.bin
+uvicorn main:app
 ```
 
-## Configuration
-
-* `BLOCK_SIZE` (default 64 MB) — configurable in client and NameNode allocation calls.
-* Ports and addresses are configured via environment variables or `docker-compose.yml`.
-* Persistence for NameNode metadata can be a JSON file or SQLite DB (configurable in the NameNode code).
-
-## Known limitations and future improvements
-
-* No replication implemented (MVP). Add replication for fault tolerance.
-* No sophisticated failure recovery (e.g., re-replication of lost blocks).
-* Authentication is intentionally simple.
-* Performance optimizations: parallel uploads/downloads, chunked streaming, back-pressure handling.
+Por defecto en `http://127.0.0.1:8000/api/v1`.
