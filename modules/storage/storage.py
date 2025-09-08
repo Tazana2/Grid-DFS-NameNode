@@ -26,12 +26,18 @@ class Storage:
             if part not in curr["subdirs"]:
                 raise Exception(f"Directory {path} not found")
             curr = curr["subdirs"][part]
-        print(f"-> {curr}")
         return curr
+    
+    def _collect_files_in_dir(self, dir_ref: Dict):
+        collected = []
+        for fname, meta in dir_ref["files"].items():
+            collected.append((fname, meta))
+        for sub in dir_ref["subdirs"].values():
+            collected.extend(self._collect_files_in_dir(sub))
+        return collected
 
     def mkdir(self, dirname: str, owner: str, parent: str = "/"):
         self._ensure_user_root(owner)
-        print(f"-> Parent: {parent}")
         parent_dir = self._get_dir(owner, parent)
         if dirname in parent_dir["subdirs"]:
             raise Exception("Directory already exists")
@@ -43,8 +49,19 @@ class Storage:
         parent_dir = self._get_dir(owner, parent)
         if dirname not in parent_dir["subdirs"]:
             raise Exception("Directory not found")
+
+        dir_to_remove = parent_dir["subdirs"][dirname]
+
+        deleted_blocks = []
+        for fname, meta in self._collect_files_in_dir(dir_to_remove):
+            deleted_blocks.extend(meta["blocks"])
+
         parent_dir["subdirs"].pop(dirname)
-        return {"msg": f"Directory {dirname} and its files removed"}
+
+        return {
+            "msg": f"Directory {dirname} and its files removed",
+            "deleted_blocks": deleted_blocks
+        }
 
     def allocate_file(self, filename: str, filesize: int, block_size: int, owner: str, directory: str = "/"):
         datanode_ids = list(self.datanodes.keys())

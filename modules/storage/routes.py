@@ -36,8 +36,9 @@ def make_dir(dirname: str, parent: str, user: str = Depends(get_current_user)):
     return storage.mkdir(dirname, user, parent)
 
 @router.delete("/rmdir")
-def remove_dir(dirname: str, user: str = Depends(get_current_user)):
-    return storage.rmdir(dirname, user)
+def remove_dir(dirname: str, parent: str = "/", user: str = Depends(get_current_user)):
+    result = storage.rmdir(dirname, user, parent)
+    return result
 
 @router.get("/tree")
 def tree(user: str = Depends(get_current_user)):
