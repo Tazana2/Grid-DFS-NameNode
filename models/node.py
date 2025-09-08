@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class RegisterDataNodeRequest(BaseModel):
     id: str
@@ -6,6 +7,7 @@ class RegisterDataNodeRequest(BaseModel):
     rest_port: int
     rpc_port: int
     capacity: int
+    last_seen: Optional[str] = None
 
 class AllocateRequest(BaseModel):
     filename: str

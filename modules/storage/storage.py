@@ -2,12 +2,13 @@ import uuid
 import json
 import os
 from typing import Dict
+from datetime import datetime, timedelta
 from models.node import RegisterDataNodeRequest, BlockMetadata
 
 class Storage:
     def __init__(self, metadata_file="namenode_metadata.json") -> None:
         self.datanodes: Dict[str, RegisterDataNodeRequest] = {}
-        self.directories: Dict[str, Dict] = {}  # owner -> root tree
+        self.directories: Dict[str, Dict] = {}
         self.rr_index = 0
         self.metadata_file = metadata_file
         self._load_metadata()
@@ -17,7 +18,8 @@ class Storage:
         with open(self.metadata_file, "w") as f:
             json.dump({
                 "directories": self.directories,
-                "rr_index": self.rr_index
+                "rr_index": self.rr_index,
+                "datanodes": {k: v.model_dump() for k, v in self.datanodes.items()}
             }, f)
 
     def _load_metadata(self):
@@ -27,9 +29,28 @@ class Storage:
                 self.directories = data.get("directories", {})
                 self.rr_index = data.get("rr_index", 0)
 
+                # Restaurar datanodes registrados
+                datanodes_data = data.get("datanodes", {})
+                for k, v in datanodes_data.items():
+                    self.datanodes[k] = RegisterDataNodeRequest(**v)
+
     # ------------------ Utils internos ------------------ #
     def register_datanode(self, req: RegisterDataNodeRequest):
+        req.last_seen = datetime.utcnow().isoformat()
         self.datanodes[req.id] = req
+        self._persist()
+        return {"msg": f"DataNode {req.id} registrado/actualizado"}
+
+    def get_active_datanodes(self, timeout_seconds=30):
+        now = datetime.utcnow()
+        active = {}
+        for dn_id, dn in self.datanodes.items():
+            if dn.last_seen is None:
+                continue
+            last_seen = datetime.fromisoformat(dn.last_seen)
+            if now - last_seen <= timedelta(seconds=timeout_seconds):
+                active[dn_id] = dn
+        return active
 
     def _ensure_user_root(self, owner: str):
         if owner not in self.directories:
