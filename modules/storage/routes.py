@@ -16,25 +16,29 @@ def allocate(req: AllocateRequest, user: str = Depends(get_current_user)):
     return {"filename": req.filename, "blocks": blocks}
 
 @router.get("/metadata/{filename}")
-def metadata(filename: str, user: str = Depends(get_current_user)):
-    meta = storage.get_metadata(filename)
+def metadata(filename: str, directory: str,user: str = Depends(get_current_user)):
+    meta = storage.get_metadata(filename, directory, user)
     if not meta:
         raise HTTPException(status_code=404, detail="File not found")
     return meta
 
 @router.get("/ls")
-def list_files(user: str = Depends(get_current_user)):
-    return storage.ls_files(user)
+def list_files(directory: str = "/", user: str = Depends(get_current_user)):
+    return storage.ls_files(user, directory)
 
 @router.delete("/rm/{filename}")
-def remove_file(filename: str, user: str = Depends(get_current_user)):
-    deleted = storage.rm_file(filename, user)
+def remove_file(filename: str, directory: str, user: str = Depends(get_current_user)):
+    deleted = storage.rm_file(filename, directory ,user)
     return {"msg": f"File {filename} deleted", "deleted": deleted}
 
 @router.post("/mkdir")
-def make_dir(dirname: str, user: str = Depends(get_current_user)):
-    return storage.mkdir(dirname, user)
+def make_dir(dirname: str, parent: str, user: str = Depends(get_current_user)):
+    return storage.mkdir(dirname, user, parent)
 
 @router.delete("/rmdir")
 def remove_dir(dirname: str, user: str = Depends(get_current_user)):
     return storage.rmdir(dirname, user)
+
+@router.get("/tree")
+def tree(user: str = Depends(get_current_user)):
+    return storage.directories.get(user, {})
