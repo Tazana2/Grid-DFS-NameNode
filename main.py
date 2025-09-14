@@ -1,9 +1,12 @@
 from fastapi import FastAPI
 from api.routes import api_router
 from core.config import settings
+from core.security import configure_cors
 
 app = FastAPI(title=settings.PROJECT_NAME)
 app.include_router(api_router)
+
+configure_cors(app)
 
 # Healt endpoint
 @app.get("/")
