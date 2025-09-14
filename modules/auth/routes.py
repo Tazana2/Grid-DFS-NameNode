@@ -14,6 +14,8 @@ def login(req: LoginRequest):
 
 @router.post("/register")
 def register(req: RegisterRequest):
-    if not register_user(req.username, req.password):
+    try:
+        register_user(req.username, req.password)
+    except Exception:
         raise HTTPException(status_code=400, detail="User already exists")
     return {"msg": f"User {req.username} registered successfully"}
