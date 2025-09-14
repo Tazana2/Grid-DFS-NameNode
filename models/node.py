@@ -13,7 +13,7 @@ class AllocateRequest(BaseModel):
     filename: str
     filesize: int
     block_size: int = 64 * 1024 * 1024 # 64MB default
-    owner: str
+    owner: Optional[str] = None
     directory: str = "/"
 
 class BlockMetadata(BaseModel):
