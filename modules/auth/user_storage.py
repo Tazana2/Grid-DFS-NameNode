@@ -3,8 +3,13 @@ import os
 import hashlib
 from typing import Dict
 
+
 class UserStorage:
-    def __init__(self, users_file="users.json"):
+    def __init__(self, users_file: str | None = None):
+        if users_file is None:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            users_file = os.path.join(base_dir, "..", "..", "users.json")
+            users_file = os.path.abspath(users_file)
         self.users_file = users_file
         self.users: Dict[str, str] = {}
         self._load_users()
@@ -29,5 +34,6 @@ class UserStorage:
     def validate(self, username: str, password: str) -> bool:
         hashed = hashlib.sha256(password.encode()).hexdigest()
         return self.users.get(username) == hashed
+
 
 user_storage = UserStorage()

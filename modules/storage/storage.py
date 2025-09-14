@@ -5,12 +5,15 @@ from typing import Dict
 from datetime import datetime, timedelta
 from models.node import RegisterDataNodeRequest, BlockMetadata
 
+
 class Storage:
     def __init__(self, metadata_file="namenode_metadata.json") -> None:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.metadata_file = os.path.join(base_dir, "..", "..", metadata_file)
+        self.metadata_file = os.path.abspath(self.metadata_file)
         self.datanodes: Dict[str, RegisterDataNodeRequest] = {}
         self.directories: Dict[str, Dict] = {}
         self.rr_index = 0
-        self.metadata_file = metadata_file
         self._load_metadata()
 
     # ------------------ Persistencia ------------------ #
